@@ -87,7 +87,8 @@ setup_env() {
     git clone https://www.github.com/LokiLuciferase/envsetup-lite.git && cd envsetup-lite || return
     mkdir -p $HOME/.local/bin
     ln -s $(which nvim) $HOME/.local/bin/neovim
-    DO_ENV=true DO_VIM=true ALLOW_SUDO=false set_up.sh
+    export PATH=$PATH:$HOME/.local/bin
+    DO_ENV=true DO_VIM=true ALLOW_SUDO=false RUN_ZSH=false bash set_up.sh
     cd ..
 }
 
