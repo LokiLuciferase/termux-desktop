@@ -53,10 +53,10 @@ usage() {
 }
 
 ## Update, X11-repo, Program Installation
-_pkgs=(bc bmon calc calcurse curl dbus desktop-file-utils elinks feh fontconfig-utils fsmon \
+_pkgs=(bc bmon build-essential calc calcurse curl dbus desktop-file-utils elinks feh fontconfig-utils fsmon \
 		geany git gtk2 gtk3 htop-legacy imagemagick jq leafpad man mpc mpd mutt ncmpcpp \
 		ncurses-utils neofetch netsurf obconf openbox openssl-tool polybar ranger rofi \
-		startup-notification termux-api thunar tigervnc vim wget xarchiver xbitmaps xcompmgr \
+		startup-notification termux-api thunar tigervnc neovim wget xarchiver xbitmaps xcompmgr \
 		xfce4-settings xfce4-terminal xmlstarlet xorg-font-util xorg-xrdb zsh)
 
 setup_base() {
@@ -81,11 +81,21 @@ setup_base() {
 	reset_color
 }
 
-## Setup OMZ and Termux Configs
-setup_omz() {
+## Setup personal dotfiles and shell
+setup_env() {
+    echo -e ${RED}"\n[*] Installing custom environment..."
+    git clone https://www.github.com/LokiLuciferase/envsetup-lite.git && cd envsetup-lite || return
+    mkdir -p $HOME/.local/bin
+    ln -s $(which nvim) $HOME/.local/bin/neovim
+    DO_ENV=true DO_VIM=true ALLOW_SUDO=false set_up.sh
+    cd ..
+}
+
+## Setup Termux Configs
+setup_termux() {
 	# backup previous termux and omz files
-	echo -e ${RED}"[*] Setting up OMZ and termux configs..."
-	omz_files=(.oh-my-zsh .termux .zshrc)
+	echo -e ${RED}"[*] Setting up termux configs..."
+	omz_files=( .termux )
 	for file in "${omz_files[@]}"; do
 		echo -e ${CYAN}"\n[*] Backing up $file..."
 		if [[ -f "$HOME/$file" || -d "$HOME/$file" ]]; then
@@ -94,57 +104,11 @@ setup_omz() {
 			echo -e ${MAGENTA}"\n[!] $file Doesn't Exist."			
 		fi
 	done
-	# installing omz
-	echo -e ${CYAN}"\n[*] Installing Oh-my-zsh... \n"
-	{ reset_color; git clone https://github.com/robbyrussell/oh-my-zsh.git --depth 1 $HOME/.oh-my-zsh; }
-	cp $HOME/.oh-my-zsh/templates/zshrc.zsh-template $HOME/.zshrc
-	sed -i -e 's/ZSH_THEME=.*/ZSH_THEME="aditya"/g' $HOME/.zshrc
-	sed -i -e 's|# export PATH=.*|export PATH=$HOME/.local/bin:$PATH|g' $HOME/.zshrc
-	# ZSH theme
-	cat > $HOME/.oh-my-zsh/custom/themes/aditya.zsh-theme <<- _EOF_
-		# Default OMZ theme
-
-		if [[ "\$USER" == "root" ]]; then
-		  PROMPT="%(?:%{\$fg_bold[red]%}%{\$fg_bold[yellow]%}%{\$fg_bold[red]%} :%{\$fg_bold[red]%} )"
-		  PROMPT+='%{\$fg[cyan]%}  %c%{\$reset_color%} \$(git_prompt_info)'
-		else
-		  PROMPT="%(?:%{\$fg_bold[red]%}%{\$fg_bold[green]%}%{\$fg_bold[yellow]%} :%{\$fg_bold[red]%} )"
-		  PROMPT+='%{\$fg[cyan]%}  %c%{\$reset_color%} \$(git_prompt_info)'
-		fi
-
-		ZSH_THEME_GIT_PROMPT_PREFIX="%{\$fg_bold[blue]%}  git:(%{\$fg[red]%}"
-		ZSH_THEME_GIT_PROMPT_SUFFIX="%{\$reset_color%} "
-		ZSH_THEME_GIT_PROMPT_DIRTY="%{\$fg[blue]%}) %{\$fg[yellow]%}✗"
-		ZSH_THEME_GIT_PROMPT_CLEAN="%{\$fg[blue]%})"
-	_EOF_
 	# Append some aliases
-	cat >> $HOME/.zshrc <<- _EOF_
-		#------------------------------------------
-		alias l='ls -lh'
-		alias ll='ls -lah'
-		alias la='ls -a'
-		alias ld='ls -lhd'
-		alias p='pwd'
-
-		#alias rm='rm -rf'
-		alias u='cd $PREFIX'
-		alias h='cd $HOME'
+	cat >> $HOME/.zsh_aliases <<- _EOF_
 		alias :q='exit'
-		alias grep='grep --color=auto'
 		alias open='termux-open'
-		alias lc='lolcat'
-		alias xx='chmod +x'
 		alias rel='termux-reload-settings'
-
-		#------------------------------------------
-
-		# SSH Server Connections
-
-		# linux (Arch)
-		#alias arch='ssh UNAME@IP -i ~/.ssh/id_rsa.DEVICE'
-
-		# linux sftp (Arch)
-		#alias archfs='sftp -i ~/.ssh/id_rsa.DEVICE UNAME@IP'
 	_EOF_
 
 	# configuring termux
@@ -184,7 +148,7 @@ setup_omz() {
 		]	
 	_EOF_
 	# change shell and reload configs
-	{ chsh -s zsh; termux-reload-settings; termux-setup-storage; }
+    { chsh -s zsh; termux-reload-settings; termux-setup-storage; }
 }
 
 ## Configuration
@@ -286,7 +250,8 @@ post_msg() {
 install_td() {
 	banner
 	setup_base
-	setup_omz
+    setup_env
+	setup_termux
 	setup_config
 	setup_vnc
 	setup_launcher
