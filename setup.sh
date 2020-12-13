@@ -90,6 +90,7 @@ setup_env() {
     export PATH=$PATH:$HOME/.local/bin
     DO_ENV=true DO_VIM=true ALLOW_SUDO=false RUN_ZSH=false bash set_up.sh
     cd ..
+    rm .common_env_variables || true
 }
 
 ## Setup Termux Configs
